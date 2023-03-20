@@ -1,0 +1,2 @@
+#!/bin/bash
+exec "/usr/local/tomcat/shared/classes/alfresco/substituter.sh" "'${TOMCAT_DIR}/bin/catalina.sh' run"
