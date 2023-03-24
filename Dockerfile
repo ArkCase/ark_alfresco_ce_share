@@ -18,17 +18,17 @@ ARG ARCH="amd64"
 ARG OS="linux"
 ARG VER="7.3.1"
 ARG PKG="alfresco-share"
-ARG ALFRESCO_SRC="docker.io/alfresco/alfresco-share:${VER}"
+ARG ALFRESCO_SRC="docker.io/alfresco/alfresco-share"
 ARG RM_VER="${VER}"
-ARG RM_SRC="${BASE_REGISTRY}/arkcase/alfresco-ce-rm:${RM_VER}"
+ARG RM_SRC="arkcase/alfresco-ce-rm"
 ARG APP_USER="alfresco"
 ARG APP_UID="33000"
 ARG APP_GROUP="${APP_USER}"
 ARG APP_GID="1000"
 
 # Used to copy artifacts
-FROM "${ALFRESCO_SRC}" as alfresco-src
-FROM "${RM_SRC}" as rm-src
+FROM "${ALFRESCO_SRC}:${VER}" AS alfresco-src
+FROM "${BASE_REGISTRY}/${RM_SRC}:${RM_VER}" AS rm-src
 
 ARG BASE_REGISTRY
 ARG BASE_REPO
