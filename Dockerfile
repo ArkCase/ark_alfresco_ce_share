@@ -68,14 +68,15 @@ ENV JAVA_HOME="/usr/lib/jvm/jre-11-openjdk" \
 RUN yum -y update && \
     yum install -y \
         apr \
-        langpacks-en \
-        java-${JAVA_MAJOR}-openjdk-devel \
-        fontconfig \
         dejavu-fonts-common \
+        dejavu-sans-fonts \
+        fontconfig \
         fontpackages-filesystem \
         freetype \
+        java-${JAVA_MAJOR}-openjdk-devel \
+        langpacks-en \
         libpng \
-        dejavu-sans-fonts && \
+    && \
     yum -y clean all && \
     mkdir -p "${CATALINA_HOME}" && \
     mkdir -p "${TOMCAT_NATIVE_LIBDIR}" && \
