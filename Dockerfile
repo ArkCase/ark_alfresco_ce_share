@@ -87,6 +87,7 @@ WORKDIR "${CATALINA_HOME}"
 COPY --from=alfresco-src "${CATALINA_HOME}" "${CATALINA_HOME}"
 COPY --from=rm-src /alfresco-governance-services-community-share-*.amp /alfresco-governance-services-community-share.amp
 COPY entrypoint /entrypoint
+COPY --chown="${APP_USER}:${APP_GROUP}" "server.xml" "${CATALINA_HOME}/conf/server.xml"
 
 RUN chown -R "${APP_USER}:" "${CATALINA_HOME}"
 RUN chmod 0755 /entrypoint
