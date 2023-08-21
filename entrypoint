@@ -4,6 +4,6 @@ set -euo pipefail
 
 # Initialize SSL
 [ -v SSL_DIR ] || SSL_DIR="/.ssl"
-acme-init
+/usr/local/bin/acme-init
 
 exec "/usr/local/tomcat/shared/classes/alfresco/substituter.sh" "'${TOMCAT_DIR}/bin/catalina.sh' run"

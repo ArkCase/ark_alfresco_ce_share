@@ -81,7 +81,7 @@ RUN yum -y update && \
     mkdir -p "${CATALINA_HOME}" && \
     mkdir -p "${TOMCAT_NATIVE_LIBDIR}" && \
     groupadd -g "${APP_GID}" "${APP_GROUP}" && \
-    useradd -u "${APP_UID}" -g "${APP_GROUP}" "${APP_USER}"
+    useradd -u "${APP_UID}" -g "${APP_GROUP}" -G "${ACM_GROUP}" "${APP_USER}"
 
 WORKDIR "${CATALINA_HOME}"
 COPY --from=alfresco-src "${CATALINA_HOME}" "${CATALINA_HOME}"
