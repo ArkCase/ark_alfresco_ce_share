@@ -1,2 +1,6 @@
 #!/bin/bash
+
+# Initialize SSL
+acme-init
+
 exec "/usr/local/tomcat/shared/classes/alfresco/substituter.sh" "'${TOMCAT_DIR}/bin/catalina.sh' run"

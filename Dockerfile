@@ -12,11 +12,11 @@
 
 ARG PUBLIC_REGISTRY="public.ecr.aws"
 ARG BASE_REPO="arkcase/base"
-ARG BASE_TAG="8.7.0"
+ARG BASE_TAG="8.8-01"
 ARG ARCH="amd64"
 ARG OS="linux"
 ARG VER="7.3.1"
-ARG BLD="02"
+ARG BLD="03"
 ARG PKG="alfresco-share"
 ARG ALFRESCO_SRC="docker.io/alfresco/alfresco-share"
 ARG RM_VER="${VER}"
