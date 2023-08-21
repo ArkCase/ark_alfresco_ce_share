@@ -65,8 +65,7 @@ ENV JAVA_HOME="/usr/lib/jvm/jre-11-openjdk" \
     LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}${TOMCAT_NATIVE_LIBDIR}" \
     PATH="${CATALINA_HOME}/bin:${PATH}"
 
-RUN yum -y update && \
-    yum install -y \
+RUN yum install -y \
         apr \
         dejavu-fonts-common \
         dejavu-sans-fonts \
@@ -108,5 +107,7 @@ RUN java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar \
     test $NATIVE -ge 1 || exit 1 && \
     java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar list  "${TOMCAT_DIR}/webapps/share"
 
-EXPOSE 8000 
+COPY --chown="${APP_USER}:${APP_GROUP}" shared/ "${TOMCAT_DIR}/shared/"
+
+EXPOSE 8443
 ENTRYPOINT [ "/entrypoint" ]
