@@ -24,7 +24,7 @@ ARG ALFRESCO_REPO="docker.io/alfresco/alfresco-share"
 ARG ALFRESCO_IMG="${ALFRESCO_REPO}:${VER}"
 
 ARG RM_REPO="arkcase/alfresco-ce-rm"
-ARG RM_VER="${VER}"
+ARG RM_VER="7.3.1"
 ARG RM_IMG="${PUBLIC_REGISTRY}/${RM_REPO}:${RM_VER}"
 
 ARG BASE_REPO="arkcase/base"
