@@ -1,17 +1,17 @@
 #!/bin/bash
 
 set -euo pipefail
+. /.functions
 
 # Initialize SSL
-[ -v SSL_DIR ] || SSL_DIR="/.ssl"
-/usr/local/bin/acme-init
+init_ssl
 
 # Set the keystore password for Solr client auth
 SERVER_XML="${TOMCAT_DIR}/conf/server.xml"
 cp -vf "${SERVER_XML}" "${SERVER_XML}.orig"
-/usr/bin/xmlstarlet ed -L -P \
+xmlstarlet ed -L -P \
 	--update "/Server/Service[@name = 'Catalina']/Connector[@port = '8999']/@keystoreFile" --value "${SSL_DIR}/keystore.pkcs12" \
 	--update "/Server/Service[@name = 'Catalina']/Connector[@port = '8999']/@keystorePass" --value "$(<"${SSL_DIR}/keystore.pass")" \
 	"${SERVER_XML}"
 
-exec "/usr/local/tomcat/shared/classes/alfresco/substituter.sh" "'${TOMCAT_DIR}/bin/catalina.sh' run"
+execute "/usr/local/tomcat/shared/classes/alfresco/substituter.sh" "'${TOMCAT_DIR}/bin/catalina.sh' run"
