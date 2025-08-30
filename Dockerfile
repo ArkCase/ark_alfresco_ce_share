@@ -85,8 +85,9 @@ RUN set-java "${JAVA}" && \
     useradd -u "${APP_UID}" -g "${APP_GROUP}" -G "${ACM_GROUP}" "${APP_USER}"
 
 WORKDIR "${CATALINA_HOME}"
+ARG RM_AMP="/alfresco-governance-services-community-share.amp"
 COPY --from=alfresco-src "${CATALINA_HOME}" "${CATALINA_HOME}"
-COPY --from=rm-src /alfresco-governance-services-community-share-*.amp /alfresco-governance-services-community-share.amp
+COPY --from=rm-src /alfresco-governance-services-community-share-*.amp "${RM_AMP}"
 COPY entrypoint /entrypoint
 COPY --chown="${APP_USER}:${APP_GROUP}" "server.xml" "${CATALINA_HOME}/conf/server.xml"
 
@@ -101,8 +102,9 @@ ENV JAVA_MAJOR="${JAVA}" \
     LD_LIBRARY_PATH="${CATALINA_HOME}/native-jni-lib" \
     PATH="${CATALINA_HOME}/bin:${PATH}"
 
+ENV RM_AMP="${RM_AMP}"
 RUN java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar \
-        install "/alfresco-governance-services-community-share.amp" \
+        install "${RM_AMP}" \
         "${TOMCAT_DIR}/webapps/share" -nobackup && \
     NATIVE="$(catalina.sh configtest 2>&1 | grep -c 'Loaded Apache Tomcat Native library')" && \
     test $NATIVE -ge 1 || exit 1 && \
