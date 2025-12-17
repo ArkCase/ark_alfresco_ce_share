@@ -30,7 +30,7 @@ ARG RM_IMG="${PUBLIC_REGISTRY}/${RM_REPO}:${RM_VER}"
 
 ARG BASE_REGISTRY="${PUBLIC_REGISTRY}"
 ARG BASE_REPO="arkcase/base-java"
-ARG BASE_VER="8"
+ARG BASE_VER="22.04"
 ARG BASE_VER_PFX=""
 ARG BASE_IMG="${BASE_REGISTRY}/${BASE_REPO}:${BASE_VER_PFX}${BASE_VER}"
 
@@ -68,31 +68,28 @@ ENV JAVA_MAJOR="${JAVA}" \
     PATH="${CATALINA_HOME}/bin:${PATH}"
 
 RUN set-java "${JAVA}" && \
-    yum install -y \
-        apr \
-        dejavu-fonts-common \
-        dejavu-sans-fonts \
+    apt-get -y install \
         fontconfig \
-        fontpackages-filesystem \
-        freetype \
-        langpacks-en \
-        libpng \
+        fonts-dejavu \
+        language-pack-en \
+        libapr1 \
+        libfreetype6 \
+        libpng-tools \
       && \
-    yum -y clean all && \
+    apt-get clean && \
     mkdir -p "${CATALINA_HOME}" && \
     mkdir -p "${TOMCAT_NATIVE_LIBDIR}" && \
     groupadd -g "${APP_GID}" "${APP_GROUP}" && \
-    useradd -u "${APP_UID}" -g "${APP_GROUP}" -G "${ACM_GROUP}" "${APP_USER}"
+    useradd -u "${APP_UID}" -g "${APP_GROUP}" -G "${ACM_GROUP}" -m "${APP_USER}"
 
 WORKDIR "${CATALINA_HOME}"
 ARG RM_AMP="/alfresco-governance-services-community-share.amp"
 COPY --from=alfresco-src "${CATALINA_HOME}" "${CATALINA_HOME}"
 COPY --from=rm-src /alfresco-governance-services-community-share-*.amp "${RM_AMP}"
-COPY entrypoint /entrypoint
+COPY --chown=root:root --chmod=0755 entrypoint /entrypoint
 COPY --chown="${APP_USER}:${APP_GROUP}" "server.xml" "${CATALINA_HOME}/conf/server.xml"
 
 RUN chown -R "${APP_USER}:" "${CATALINA_HOME}"
-RUN chmod 0755 /entrypoint
 
 USER "${APP_USER}"
 ENV JAVA_MAJOR="${JAVA}" \
