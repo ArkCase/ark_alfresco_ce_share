@@ -34,12 +34,21 @@ ARG BASE_VER="22.04"
 ARG BASE_VER_PFX=""
 ARG BASE_IMG="${BASE_REGISTRY}/${BASE_REPO}:${BASE_VER_PFX}${BASE_VER}"
 
+ARG BASE_TOMCAT_REGISTRY="${PUBLIC_REGISTRY}"
+ARG BASE_TOMCAT_REPO="arkcase/base-tomcat"
+ARG BASE_TOMCAT_VER="9"
+ARG BASE_TOMCAT_IMG="${BASE_TOMCAT_REGISTRY}/${BASE_TOMCAT_REPO}:${BASE_VER_PFX}${BASE_TOMCAT_VER}"
+
 # Used to copy artifacts
 FROM "${ALFRESCO_IMG}" AS alfresco-src
 
 ARG RM_IMG
 
 FROM "${RM_IMG}" AS rm-src
+
+ARG BASE_TOMCAT_IMG
+
+FROM "${BASE_TOMCAT_IMG}" AS tomcat-src
 
 ARG BASE_IMG
 
@@ -62,10 +71,10 @@ LABEL ORG="ArkCase LLC" \
       VERSION="${VER}"
 
 ENV JAVA_MAJOR="${JAVA}" \
-    CATALINA_HOME="/usr/local/tomcat" \
-    TOMCAT_NATIVE_LIBDIR="${CATALINA_HOME}/native-jni-lib" \
-    LD_LIBRARY_PATH="${LD_LIBRARY_PATH:+${LD_LIBRARY_PATH}:}${TOMCAT_NATIVE_LIBDIR}" \
-    PATH="${CATALINA_HOME}/bin:${PATH}"
+    CATALINA_HOME="/usr/local/tomcat"
+ENV TOMCAT_NATIVE_LIBDIR="${CATALINA_HOME}/native-jni-lib"
+ENV LD_LIBRARY_PATH="${TOMCAT_NATIVE_LIBDIR}"
+ENV PATH="${CATALINA_HOME}/bin:${PATH}"
 
 RUN set-java "${JAVA}" && \
     apt-get -y install \
@@ -84,28 +93,25 @@ RUN set-java "${JAVA}" && \
 
 WORKDIR "${CATALINA_HOME}"
 ARG RM_AMP="/alfresco-governance-services-community-share.amp"
-COPY --from=alfresco-src "${CATALINA_HOME}" "${CATALINA_HOME}"
 COPY --from=rm-src /alfresco-governance-services-community-share-*.amp "${RM_AMP}"
+COPY --from=alfresco-src --chown="${APP_USER}:${APP_GROUP}" "${CATALINA_HOME}" "${CATALINA_HOME}"
+COPY --from=tomcat-src --chown="${APP_USER}:${APP_GROUP}" --chmod="0755" "/app/tomcat/lib/native/${JAVA_MAJOR}" "${TOMCAT_NATIVE_LIBDIR}.new"
+
 COPY --chown=root:root --chmod=0755 entrypoint /entrypoint
 COPY --chown="${APP_USER}:${APP_GROUP}" "server.xml" "${CATALINA_HOME}/conf/server.xml"
 
-RUN chown -R "${APP_USER}:" "${CATALINA_HOME}"
+RUN rm -rf "${TOMCAT_NATIVE_LIBDIR}" && \
+    mv -vf "${TOMCAT_NATIVE_LIBDIR}.new" "${TOMCAT_NATIVE_LIBDIR}"
 
 USER "${APP_USER}"
-ENV JAVA_MAJOR="${JAVA}" \
-    CATALINA_HOME="/usr/local/tomcat" \
-    TOMCAT_NATIVE_LIBDIR="${CATALINA_HOME}/native-jni-lib" \
-    TOMCAT_DIR="${CATALINA_HOME}" \
-    LD_LIBRARY_PATH="${CATALINA_HOME}/native-jni-lib" \
-    PATH="${CATALINA_HOME}/bin:${PATH}"
+ENV TOMCAT_DIR="${CATALINA_HOME}"
 
 ENV RM_AMP="${RM_AMP}"
 RUN java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar \
         install "${RM_AMP}" \
         "${TOMCAT_DIR}/webapps/share" -nobackup && \
-    NATIVE="$(catalina.sh configtest 2>&1 | grep -c 'Loaded Apache Tomcat Native library')" && \
-    test $NATIVE -ge 1 || exit 1 && \
-    java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar list  "${TOMCAT_DIR}/webapps/share"
+    java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar list  "${TOMCAT_DIR}/webapps/share" && \
+    ( catalina.sh configtest 2>&1 | grep -q 'Loaded Apache Tomcat Native library' )
 
 COPY --chown="${APP_USER}:${APP_GROUP}" shared/ "${TOMCAT_DIR}/shared/"
 
