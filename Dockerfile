@@ -95,7 +95,9 @@ WORKDIR "${CATALINA_HOME}"
 ARG RM_AMP="/alfresco-governance-services-community-share.amp"
 COPY --from=rm-src /alfresco-governance-services-community-share-*.amp "${RM_AMP}"
 COPY --from=alfresco-src --chown="${APP_USER}:${APP_GROUP}" "${CATALINA_HOME}" "${CATALINA_HOME}"
-COPY --from=tomcat-src --chown="${APP_USER}:${APP_GROUP}" --chmod="0755" "/app/tomcat/lib/native/${JAVA_MAJOR}" "${TOMCAT_NATIVE_LIBDIR}.new"
+
+ARG NATIVE_VER="1.2"
+COPY --from=tomcat-src --chown="${APP_USER}:${APP_GROUP}" --chmod="0755" "/app/tomcat/lib/native/${NATIVE_VER}/${JAVA_MAJOR}" "${TOMCAT_NATIVE_LIBDIR}.new"
 
 COPY --chown=root:root --chmod=0755 entrypoint /entrypoint
 COPY --chown="${APP_USER}:${APP_GROUP}" "server.xml" "${CATALINA_HOME}/conf/server.xml"
