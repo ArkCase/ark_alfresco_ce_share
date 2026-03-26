@@ -3,15 +3,37 @@
 set -euo pipefail
 . /.functions
 
-# Initialize SSL
+#
+# Init all the SSL-related stuff
+#
 init_ssl
 
-# Set the keystore password for Solr client auth
-SERVER_XML="${TOMCAT_DIR}/conf/server.xml"
-cp -vf "${SERVER_XML}" "${SERVER_XML}.orig"
-xmlstarlet ed -L -P \
-	--update "/Server/Service[@name = 'Catalina']/Connector[@port = '8999']/@keystoreFile" --value "${SSL_DIR}/keystore.pkcs12" \
-	--update "/Server/Service[@name = 'Catalina']/Connector[@port = '8999']/@keystorePass" --value "$(<"${SSL_DIR}/keystore.pass")" \
-	"${SERVER_XML}"
+#
+# Add the requisite CATALINA_OPTS carrying certificate passwords (not the cleanest way, but
+# Alfresco isn't smart enough to do better)
+#
+set_or_default CATALINA_OPTS
+SSL_OPTS=(
+	-Dencryption.ssl.keystore.location="${JAVA_KEYSTORE}"
+	-Dencryption.ssl.keystore.type="${JAVA_KEYSTORE_TYPE}"
 
-execute "/usr/local/tomcat/shared/classes/alfresco/substituter.sh" "'${TOMCAT_DIR}/bin/catalina.sh' run"
+	-Dssl-keystore.password="${JAVA_KEYSTORE_PASSWORD}"
+	-Dssl-keystore.aliases="${JAVA_KEY_ALIAS}"
+	"-Dssl-keystore.${JAVA_KEY_ALIAS}.password=${JAVA_KEY_PASSWORD}"
+
+	-Dencryption.ssl.truststore.location="${JAVA_TRUSTSTORE}"
+	-Dencryption.ssl.truststore.type="${JAVA_TRUSTSTORE_TYPE}"
+)
+CATALINA_OPTS+=" ${SSL_OPTS[@]}"
+export CATALINA_OPTS
+unset SSL_OPTS
+
+#
+# Ignore any failures here
+#
+/usr/local/tomcat/shared/classes/alfresco/substituter.sh || true
+
+#
+# Start Tomcat!
+#
+execute "${TOMCAT_DIR}/bin/catalina.sh" run

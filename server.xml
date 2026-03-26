@@ -122,13 +122,14 @@
                useBodyEncodingForURI="true">
         <UpgradeProtocol className="org.apache.coyote.http2.Http2Protocol" />
         <SSLHostConfig protocols="TLSv1.2" certificateVerification="none">
-            <Certificate certificateKeyFile="/.ssl/cert.key"
-                         certificateFile="/.ssl/cert.pem"
-                         certificateChainFile="/.ssl/ca-chain.pem"
+            <Certificate certificateKeyFile="${SSL_DIR}/cert.key"
+                         certificateFile="${SSL_DIR}/cert.pem"
+                         certificateChainFile="${SSL_DIR}/ca-chain.pem"
                          type="RSA" />
         </SSLHostConfig>
     </Connector>
 
+    <!-- this connector is needed for ActiveMQ mTLS -->
     <Connector port="8999"
                protocol="HTTP/1.1"
                connectionTimeout="20000"
@@ -137,10 +138,13 @@
                secure="true"
                sslProtocol="TLS"
                clientAuth="true"
-               keystoreFile="/.ssl/keystore.pkcs12"
-               keystorePass="set-me-to-something"
-               truststoreFile="/etc/pki/java/cacerts"
-               truststorePass="changeit" />
+               keystoreFile="${JAVA_KEYSTORE}"
+               keystorePass="${JAVA_KEYSTORE_PASSWORD}"
+               keystoreType="${JAVA_KEYSTORE_TYPE}"
+               truststoreFile="${JAVA_TRUSTSTORE}"
+               truststorePass="${JAVA_TRUSTSTORE_PASSWORD}"
+               truststoreType="${JAVA_TRUSTSTORE_TYPE}"
+    />
 
     <!-- Define an AJP 1.3 Connector on port 8009 -->
     <!--

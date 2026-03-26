@@ -51,6 +51,10 @@ ARG BASE_TOMCAT_IMG
 
 FROM "${BASE_TOMCAT_IMG}" AS tomcat-src
 
+FROM scratch AS tempfiles
+
+ADD catalina.properties.extra /
+
 ARG BASE_IMG
 
 # Final Image
@@ -117,6 +121,9 @@ RUN java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar \
     ( catalina.sh configtest 2>&1 | grep -q 'Loaded Apache Tomcat Native library' )
 
 COPY --chown="${APP_USER}:${APP_GROUP}" shared/ "${TOMCAT_DIR}/shared/"
+
+RUN --mount=type=cache,from=tempfiles,target=/tempfiles,id=tempfiles,ro=true \
+    cat /tempfiles/catalina.properties.extra >> /usr/local/tomcat/conf/catalina.properties
 
 EXPOSE 8443
 ENTRYPOINT [ "/entrypoint" ]
