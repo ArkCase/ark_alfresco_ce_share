@@ -121,11 +121,13 @@
                SSLEnabled="true"
                useBodyEncodingForURI="true">
         <UpgradeProtocol className="org.apache.coyote.http2.Http2Protocol" />
-        <SSLHostConfig protocols="TLSv1.2" certificateVerification="none">
+        <SSLHostConfig protocols="TLSv1.3" certificateVerification="none">
             <Certificate certificateKeyAlias="${JAVA_KEY_ALIAS}"
+                         certificateKeyPassword="${JAVA_KEY_PASSWORD}"
                          certificateKeystoreFile="${JAVA_KEYSTORE}"
-                         certificateKeystorePasswordFile="${JAVA_KEYSTORE_PASSWORD_FILE}"
-                         certificateKeystoreType="${JAVA_KEYSTORE_TYPE}" />
+                         certificateKeystorePassword="${JAVA_KEYSTORE_PASSWORD}"
+                         certificateKeystoreType="${JAVA_KEYSTORE_TYPE}"
+                         certificateKeystoreProvider="${JAVA_KEYSTORE_PROVIDER}" />
         </SSLHostConfig>
     </Connector>
 
@@ -135,16 +137,22 @@
                connectionTimeout="20000"
                SSLEnabled="true"
                scheme="https"
-               secure="true"
-               sslProtocol="TLS"
-               clientAuth="true"
-               keystoreFile="${JAVA_KEYSTORE}"
-               keystorePass="${JAVA_KEYSTORE_PASSWORD}"
-               keystoreType="${JAVA_KEYSTORE_TYPE}"
-               truststoreFile="${JAVA_TRUSTSTORE}"
-               truststorePass="${JAVA_TRUSTSTORE_PASSWORD}"
-               truststoreType="${JAVA_TRUSTSTORE_TYPE}"
-    />
+               secure="true">
+        <SSLHostConfig protocols="TLSv1.3"
+                       sslProtocol="TLSv1.3"
+                       certificateVerification="required"
+                       truststoreFile="${JAVA_TRUSTSTORE}"
+                       truststorePassword="${JAVA_TRUSTSTORE_PASSWORD}"
+                       truststoreType="${JAVA_TRUSTSTORE_TYPE}"
+                       truststoreProvider="${JAVA_TRUSTSTORE_PROVIDER}">
+            <Certificate certificateKeyAlias="${JAVA_KEY_ALIAS}"
+                         certificateKeyPassword="${JAVA_KEY_PASSWORD}"
+                         certificateKeystoreFile="${JAVA_KEYSTORE}"
+                         certificateKeystorePassword="${JAVA_KEYSTORE_PASSWORD}"
+                         certificateKeystoreType="${JAVA_KEYSTORE_TYPE}"
+                         certificateKeystoreProvider="${JAVA_KEYSTORE_PROVIDER}" />
+        </SSLHostConfig>
+    </Connector>
 
     <!-- Define an AJP 1.3 Connector on port 8009 -->
     <!--
