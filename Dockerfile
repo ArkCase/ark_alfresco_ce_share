@@ -10,6 +10,7 @@
 #
 ###########################################################################################################
 
+ARG FIPS=""
 ARG PUBLIC_REGISTRY="public.ecr.aws"
 ARG ARCH="amd64"
 ARG OS="linux"
@@ -32,7 +33,7 @@ ARG BASE_REGISTRY="${PUBLIC_REGISTRY}"
 ARG BASE_REPO="arkcase/base-java"
 ARG BASE_VER="24.04"
 ARG BASE_VER_PFX=""
-ARG BASE_IMG="${BASE_REGISTRY}/${BASE_REPO}:${BASE_VER_PFX}${BASE_VER}"
+ARG BASE_IMG="${BASE_REGISTRY}/${BASE_REPO}${FIPS}:${BASE_VER_PFX}${BASE_VER}"
 
 ARG BASE_TOMCAT_REGISTRY="${BASE_REGISTRY}"
 ARG BASE_TOMCAT_REPO="arkcase/base-tomcat"
@@ -49,6 +50,10 @@ FROM "${RM_IMG}" AS rm-src
 ARG BASE_TOMCAT_IMG
 
 FROM "${BASE_TOMCAT_IMG}" AS tomcat-src
+
+FROM scratch AS tempfiles
+
+ADD catalina.properties.extra /
 
 ARG BASE_IMG
 
@@ -97,13 +102,12 @@ COPY --from=rm-src /alfresco-governance-services-community-share-*.amp "${RM_AMP
 COPY --from=alfresco-src --chown="${APP_USER}:${APP_GROUP}" "${CATALINA_HOME}" "${CATALINA_HOME}"
 
 ARG NATIVE_VER="1.2"
-COPY --from=tomcat-src --chown="${APP_USER}:${APP_GROUP}" --chmod="0755" "/app/tomcat/lib/native/${NATIVE_VER}/${JAVA_MAJOR}" "${TOMCAT_NATIVE_LIBDIR}.new"
-
-COPY --chown=root:root --chmod=0755 entrypoint /entrypoint
-COPY --chown="${APP_USER}:${APP_GROUP}" "server.xml" "${CATALINA_HOME}/conf/server.xml"
-
-RUN rm -rf "${TOMCAT_NATIVE_LIBDIR}" && \
-    mv -vf "${TOMCAT_NATIVE_LIBDIR}.new" "${TOMCAT_NATIVE_LIBDIR}"
+RUN --mount=type=cache,from=tomcat-src,source=/app/tomcat/lib/native/${NATIVE_VER}/${JAVA_MAJOR},target=/src,id=app,ro=true \
+    rm -rf "${TOMCAT_NATIVE_LIBDIR}" && \
+    mkdir -p "${TOMCAT_NATIVE_LIBDIR}" && \
+    tar -C /src -cf - . | tar -C "${TOMCAT_NATIVE_LIBDIR}" -xvf - && \
+    chown -v -R "${APP_USER}:${APP_GROUP}" "${TOMCAT_NATIVE_LIBDIR}" && \
+    chmod -v a=rx "${TOMCAT_NATIVE_LIBDIR}"/*
 
 USER "${APP_USER}"
 ENV TOMCAT_DIR="${CATALINA_HOME}"
@@ -112,10 +116,16 @@ ENV RM_AMP="${RM_AMP}"
 RUN java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar \
         install "${RM_AMP}" \
         "${TOMCAT_DIR}/webapps/share" -nobackup && \
-    java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar list  "${TOMCAT_DIR}/webapps/share" && \
-    ( catalina.sh configtest 2>&1 | grep -q 'Loaded Apache Tomcat Native library' )
+    java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar list  "${TOMCAT_DIR}/webapps/share"
+RUN catalina.sh configtest 2>&1 | grep -q 'Loaded Apache Tomcat Native library'
+
+COPY --chown=root:root --chmod=0755 entrypoint /entrypoint
+COPY --chown="${APP_USER}:${APP_GROUP}" "server.xml" "${CATALINA_HOME}/conf/server.xml"
 
 COPY --chown="${APP_USER}:${APP_GROUP}" shared/ "${TOMCAT_DIR}/shared/"
+
+RUN --mount=type=cache,from=tempfiles,target=/tempfiles,id=tempfiles,ro=true \
+    cat /tempfiles/catalina.properties.extra >> /usr/local/tomcat/conf/catalina.properties
 
 EXPOSE 8443
 ENTRYPOINT [ "/entrypoint" ]

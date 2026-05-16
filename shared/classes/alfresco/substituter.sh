@@ -1,41 +1,41 @@
-#!/bin/sh
-set -e
+#!/bin/bash
 
-if [[ $REPO_SCHEME == "" ]]; then
-   REPO_SCHEME=http
-fi
+set -euo pipefail
+. /.functions
 
-if [[ $REPO_HOST == "" ]]; then
-   REPO_HOST=localhost
-fi
+set_or_default SHARED_CONFIG_XML "/usr/local/tomcat/shared/classes/alfresco/web-extension/share-config-custom.xml"
 
-if [[ $REPO_PORT == "" ]]; then
-   REPO_PORT=8080
-fi
+is_file_writable "${SHARED_CONFIG_XML}" || fail "The CSRF configuration file [${SHARED_CONFIG_XML}] is not writable"
 
-if [[ $USE_SSL == "true" ]]; then
-sed -ie 's_port="8080"_port="8080" scheme="https"_' /usr/local/tomcat/conf/server.xml
-fi
+#
+# Final configurations for CSRF
+#
+set_or_default REPO_SCHEME "http"
+export REPO_SCHEME
 
-echo "Replace 'REPO_SCHEME' WITH '$REPO_SCHEME', 'REPO_HOST' with '$REPO_HOST', and 'REPO_PORT' with '$REPO_PORT'"
+set_or_default REPO_HOST "localhost"
+export REPO_HOST
 
-sed -i -e "s;REPO_SCHEME://;$REPO_SCHEME://;g" -e "s/REPO_HOST:REPO_PORT/$REPO_HOST:$REPO_PORT/g" /usr/local/tomcat/shared/classes/alfresco/web-extension/share-config-custom.xml
+set_or_default REPO_PORT "8080"
+export REPO_PORT
 
-echo "NEW -csrf.filter.referer is '$CSRF_FILTER_REFERER'"
-echo "NEW -csrf.filter.origin is '$CSRF_FILTER_ORIGIN'"
+set_or_default CSRF_FILTER_REFERER
+export CSRF_FILTER_REFERER
 
-if [ "${CSRF_FILTER_REFERER}" != "" ] && [  "${CSRF_FILTER_ORIGIN}" != "" ]; then
-# set CSRFPolicy to true and set both properties referer and origin
-   sed -i -e "s|<config evaluator=\"string-compare\" condition=\"CSRFPolicy\" replace=\"false\">|<config evaluator=\"string-compare\" condition=\"CSRFPolicy\" replace=\"true\">|" /usr/local/tomcat/shared/classes/alfresco/web-extension/share-config-custom.xml
-   sed -i -e "s|<referer><\/referer>|<referer>$CSRF_FILTER_REFERER<\/referer>|" /usr/local/tomcat/shared/classes/alfresco/web-extension/share-config-custom.xml
-   sed -i -e "s|<origin><\/origin>|<origin>$CSRF_FILTER_ORIGIN<\/origin>|" /usr/local/tomcat/shared/classes/alfresco/web-extension/share-config-custom.xml
+set_or_default CSRF_FILTER_ORIGIN
+export CSRF_FILTER_ORIGIN
 
+
+set_as_boolean CSRF_FILTER "false"
+if [ -n "${CSRF_FILTER_REFERER}" ] && [ -n "${CSRF_FILTER_ORIGIN}" ] ; then
+	CSRF_FILTER="true"
 else
-# set CSRFPolicy to false and leave empty the properties referer and origin
-   sed -i -e "s|<config evaluator=\"string-compare\" condition=\"CSRFPolicy\" replace=\"false\">|<config evaluator=\"string-compare\" condition=\"CSRFPolicy\" replace=\"false\">|" /usr/local/tomcat/shared/classes/alfresco/web-extension/share-config-custom.xml
-   sed -i -e "s|<referer><\/referer>|<referer><\/referer>|" /usr/local/tomcat/shared/classes/alfresco/web-extension/share-config-custom.xml
-   sed -i -e "s|<origin><\/origin>|<origin><\/origin>|" /usr/local/tomcat/shared/classes/alfresco/web-extension/share-config-custom.xml
+	CSRF_FILTER="false"
+	CSRF_FILTER_REFERER=""
+	CSRF_FILTER_ORIGIN=""
 fi
 
+cp -vf "${SHARED_CONFIG_XML}" "${SHARED_CONFIG_XML}.bak"
+xmlenvsubst < "${SHARED_CONFIG_XML}.bak" > "${SHARED_CONFIG_XML}"
 
-bash -c "$@"
+quit "CSRF Configuration set (CSRF Filtering Enabled = ${CSRF_FILTER})
