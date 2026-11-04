@@ -34,8 +34,9 @@ else
 	CSRF_FILTER_REFERER=""
 	CSRF_FILTER_ORIGIN=""
 fi
+export CSRF_FILTER
 
 cp -vf "${SHARED_CONFIG_XML}" "${SHARED_CONFIG_XML}.bak"
 xmlenvsubst < "${SHARED_CONFIG_XML}.bak" > "${SHARED_CONFIG_XML}"
 
-quit "CSRF Configuration set (CSRF Filtering Enabled = ${CSRF_FILTER})
+quit "CSRF Configuration set (CSRF Filtering Enabled = ${CSRF_FILTER})"

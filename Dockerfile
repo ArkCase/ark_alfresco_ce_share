@@ -119,7 +119,7 @@ RUN java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar \
     java -jar "${TOMCAT_DIR}/alfresco-mmt"/alfresco-mmt*.jar list  "${TOMCAT_DIR}/webapps/share"
 RUN catalina.sh configtest 2>&1 | grep -q 'Loaded Apache Tomcat Native library'
 
-COPY --chown=root:root --chmod=0755 entrypoint /entrypoint
+COPY --chown=root:root --chmod=0755 entrypoint /usr/local/bin
 COPY --chown="${APP_USER}:${APP_GROUP}" "server.xml" "${CATALINA_HOME}/conf/server.xml"
 
 COPY --chown="${APP_USER}:${APP_GROUP}" shared/ "${TOMCAT_DIR}/shared/"
@@ -128,4 +128,3 @@ RUN --mount=type=cache,from=tempfiles,target=/tempfiles,id=tempfiles,ro=true \
     cat /tempfiles/catalina.properties.extra >> /usr/local/tomcat/conf/catalina.properties
 
 EXPOSE 8443
-ENTRYPOINT [ "/entrypoint" ]
