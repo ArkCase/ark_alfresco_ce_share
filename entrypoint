@@ -10,19 +10,26 @@ init_ssl
 
 #
 # Add the requisite CATALINA_OPTS carrying certificate passwords (not the cleanest way, but
-# Alfresco isn't smart enough to do better)
+# Alfresco isn't smart enough to do better). The passwords go in an argument file, to keep
+# them off the command line
 #
 set_or_default CATALINA_OPTS
+ALFRESCO_SSL_ARGS="${TEMP_DIR}/.java-args.alfresco"
+render_ssl_java_args "${ALFRESCO_SSL_ARGS}" \
+	-Dssl-keystore.password="${JAVA_KEYSTORE_PASSWORD}" \
+	"-Dssl-keystore.${JAVA_KEY_ALIAS}.password=${JAVA_KEY_PASSWORD}" \
+	|| fail "Failed to render the Alfresco SSL argument file at [${ALFRESCO_SSL_ARGS}]"
+
 SSL_OPTS=(
 	-Dencryption.ssl.keystore.location="${JAVA_KEYSTORE}"
 	-Dencryption.ssl.keystore.type="${JAVA_KEYSTORE_TYPE}"
 
-	-Dssl-keystore.password="${JAVA_KEYSTORE_PASSWORD}"
 	-Dssl-keystore.aliases="${JAVA_KEY_ALIAS}"
-	"-Dssl-keystore.${JAVA_KEY_ALIAS}.password=${JAVA_KEY_PASSWORD}"
 
 	-Dencryption.ssl.truststore.location="${JAVA_TRUSTSTORE}"
 	-Dencryption.ssl.truststore.type="${JAVA_TRUSTSTORE_TYPE}"
+
+	"@${ALFRESCO_SSL_ARGS}"
 )
 CATALINA_OPTS+=" ${SSL_OPTS[@]}"
 export CATALINA_OPTS
